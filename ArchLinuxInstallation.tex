@@ -1,4 +1,3 @@
-%\documentclass[12pt,a4paper]{book}\usepackage{hyperref}\usepackage[english, frenchb]{babel}\begin{document}
 \chapter{ArchLinux installation}
 \section{We are \textsc{Noobs}}
 There are two ways to install ArchLinux on a Raspberry Pi: the first is 
@@ -33,6 +32,23 @@ an older version of \textsc{Noobs} because ArchLinux has been removed since
 the last release.
 
 \section{Installer usage}
-% wifi ou ethernet
+According to the Noobs \href{http://www.raspberrypi.org/help/noobs-setup}
+{documentation}, you just have to download the last Noobs release and format 
+your SD card before unzip it and copy files on the card.
+\\\\
+After putting the card into the RPi and power on it, you will get the 
+installer interface with a list of all systems you can install. If you choose 
+the online way you have to connect your ethernet cable in the Raspberry even 
+if you want to use a wifi dongle later.
 
-%\end{document}
+\begin{figure}[h]
+	\centering
+	\includegraphics[scale=0.4]{images/NoobsMenu.png}
+	\caption{Noobs installer menu}
+	\label{figure:NoobsMenu}
+\end{figure}
+
+From the menu, select ArchLinux with arrow keys and press \og{}\texttt{space}
+\fg{} to valid your choice. Then, you can change system and keyborad language with 
+respectively \og{}\texttt{l}\fg{} and \og{}\texttt{0}\fg{} keys before 
+pressing \og{}\texttt{i}\fg{} to begin ArchLinux installation on your RPi.
