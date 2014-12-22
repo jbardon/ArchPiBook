@@ -1,3 +1,29 @@
-%\documentclass[12pt,a4paper]{book}\usepackage{hyperref}\usepackage[english, frenchb]{babel}\usepackage{graphicx}\begin{document}
+\documentclass[12pt,a4paper]{book}\usepackage[utf8]{inputenc}\usepackage[T1]{fontenc}\usepackage{lmodern}\usepackage{hyperref}\usepackage{graphicx}\usepackage[english, frenchb]{babel}\usepackage{listings}	\lstdefinestyle{customstyle}{basicstyle=\footnotesize,breakatwhitespace=false,breaklines=true,captionpos=b,keepspaces=true,tabsize=4,frame=single}\lstset{style=customstyle}\begin{document}
 \chapter{Basic setup}
-%\end{document}
+
+The default username and password for ArchLinux is \texttt{root/root}, the
+root user got all right on the system it means he can do anything -- even
+break the system -- so it is not recommanded to use it.
+\\
+\begin{lstlisting}[language=bash,caption=Create a new user called jeremy]
+$ useradd -m jeremy # Create user jeremy and his home folder
+$ passwd jeremy     # Modify jeremy password
+
+# Attribute rights with specific format
+$ visudo
+# Add new line: "jeremy ALL=(ALL) ALL"
+\end{lstlisting}
+
+Now we have a new user account for everydays usage, it is possible to specify
+his rights with \texttt{visudo} command. 
+The general format is the following \og{}\texttt{username machine=(targetuser) 
+commands}\fg{}
+\\let me give you some details:
+
+\begin{description}
+\item[username] name you gave to \texttt{useradd} command
+\item[machine] on which machine rights are applied, ALL in general
+\item[target user] user that we take the rights
+\item[command] allowed commands separated with one coma -- no spaces --, use exclamation mark for banned commands
+\end{description}
+\end{document}
