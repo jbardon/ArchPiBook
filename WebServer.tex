@@ -1,4 +1,196 @@
-%\documentclass[12pt,a4paper]{book}\usepackage[utf8]{inputenc}\usepackage[T1]{fontenc}\usepackage{lmodern}\usepackage{hyperref}\usepackage{graphicx}\usepackage[english, frenchb]{babel}\usepackage{listings}	\lstdefinestyle{customstyle}{basicstyle=\footnotesize,breakatwhitespace=false,breaklines=true,captionpos=b,keepspaces=true,tabsize=4,frame=single}\lstset{style=customstyle}\usepackage{menukeys}\begin{document}
+\documentclass[12pt,a4paper]{book}\usepackage{array}\usepackage{multirow}\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}\usepackage{multirow}\usepackage[utf8]{inputenc}\usepackage[T1]{fontenc}\usepackage{lmodern}\usepackage{hyperref}\usepackage{graphicx}\usepackage[english, frenchb]{babel}\usepackage{listings}	\lstdefinestyle{customstyle}{basicstyle=\footnotesize,breakatwhitespace=false,breaklines=true,captionpos=b,keepspaces=true,tabsize=4,frame=single,moredelim=[is][\underbar]{_}{_}}\lstset{style=customstyle}\usepackage{menukeys}\begin{document}
 \chapter{Web server}
+\section{Nginx versus Apache}
+In web servers world there are three major actors: Apache, nginx and 
+IIS (by Microsoft). If you look at the number of production uses\footnote{Netcraft 
+survey available on \href{http://news.netcraft.com/archives/2014/02/03/february-
+2014-web-server-survey.html}{news.netcraft.com/archives/2014/02/03/february-2014-
+web-server-survey.html}} you will see that I followed the distribution from above 
+it means \textasciitilde{}55\% for our old Apache and \textasciitilde{}15\% for 
+the two others.
+\\\\
+However, it appears like Apache decreases by 5\% and nginx get these same 5\% all 
+that between January 2014 and February 2014. Now, I can tell you I choosed to use 
+nginx instead of Apache for some reasons and the nginx rise is one of them.
+\\\\
+Let's sum up some advantages and drawbacks of using nginx instead of apache. Few 
+of them are extracted from raspbian-france.fr\footnote{Article on the same topic 
+(in french), see \href{http://raspbian-france.fr/installer-nginx-raspbian-
+accelerez-serveur-web-raspberry}{raspbian-france.fr/installer-nginx-raspbian-
+accelerez-serveur-web-raspberry}} but others are personnal. 
+\\\\
+\begin{table}
+\label{table:AvantagesNginx}
+\centering
+	\begin{tabular}{C{1cm}|p{9cm}}
+		\multirow{4}{*}{+} 
+		& Asynchronous server\footnote{Parallel execution of tasks}\\
+		& More scalable\footnote{Ability to support a lot of connexions in one time}\\
+		& Less RAM usage (think about our poor RPi)\\
+		& Config file syntax (XML vs readeable)\\
+		\hline
+		\multirow{4}{*}{-} 
+		& Less mature (1995 vs 2004)\\ 
+		& Some PHP behaviours may differ from Apache\\
+		& .htacess not work directly with nginx\\
+	\end{tabular}
+	\caption{Advantages and drawbacks of nginx}
+\end{table}
 
-%\end{document}
+\section{Installation}
+To run a non-static website, nginx is not sufficient we also need to install PHP 
+-- for dynamic pages -- and a mySQL database to save our precious data. In 
+addition, we will install phpMyAdmin which a tool -- written in PHP -- to manage 
+a mySQL database through a web interface. 
+
+\begin{lstlisting}[language=bash,caption=Install a full web server]
+# php-fpm is the nginx module for PHP
+# mariadb is a mySQL database
+$ pacman -S nginx php-fpm mariadb phpmyadmin
+
+# Enable and run services
+$ systemctl enable nginx php-fpm mysqld
+$ systemctl start nginx php-fpm mysqld
+\end{lstlisting} 
+
+Nginx server works well but php is not enabled in configuration files. Moreover, 
+there are some incompatibilties troubles in initial setup.
+
+\begin{lstlisting}[language=bash,caption=Enable php in nginx]
+# First problem: welcome file directory is not set in
+# availables directories for php
+#
+# Update php config file
+# Search open_basedir, add ":/usr/share/nginx/html/" at the end
+#
+$ nano /etc/php/php.ini
+
+# Second problem: php not enabled and contains bad setup
+# in nginx configuration file
+#
+# Uncomment (remove #) on the following block and change it 
+# to fit the example
+#
+$ nano /etc/nginx/nginx.conf
+
+# pass the PHP scripts to FastCGI server listening on 127.0.0.1:9000
+#
+location ~ \.php$ {
+    root   /usr/share/nginx/html; # Fix path to php files
+
+# Use sockets   
+#   fastcgi_pass   127.0.0.1:9000; 
+    fastcgi_pass   unix:/var/run/php-fpm/php-fpm.sock;
+            
+    fastcgi_index  index.php;
+
+# Use fastcgi.conf file
+#   fastcgi_param  SCRIPT_FILENAME  /scripts$fastcgi_script_name;
+#   include        fastcgi_params;
+    include        fastcgi.conf;
+}
+\end{lstlisting}
+
+The last thing to do is enabling mysql extensions in php configuration files to 
+be able to perform SQL queries on local database through php scripts.
+\begin{lstlisting}[language=bash,caption=Enable php in nginx]
+$ nano /etc/php/php.ini
+
+# Remove ";" before mysql and mysqli extensions
+;extension=mysql.so
+;extension=mysqli.so
+\end{lstlisting}
+
+Each time you change nginx or php configuration files you have to reload and 
+restart the corresponding service for it to take into account your changes.
+\begin{lstlisting}[language=bash,caption=Reload and restart a service]
+# Restart only considered service
+$ systemctl reload nginx php-fpm 
+$ systemctl restart nginx php-fpm
+\end{lstlisting}
+
+\section{Basic verifications}
+The next step is to check our web server with basic verifications to test whether
+the installation worked well. We will simply try to access to the default nginx 
+page remotely, create a php page and display it and finally access to local 
+database. 
+
+\subsection{Nginx and php}
+During installation process, nginx places a welcome page called \emph{index.html} 
+in \texttt{/usr/share/nginx/html} directory. However Php gives no sample to test 
+with nginx therefore we will create a new php script in welcome page directory.
+\\\\
+The content of this new script will simply display php configuration on 
+your server.
+\lstset{language=php,caption=Php simple script}
+\lstinputlisting{code/index.php}
+
+The goal of these test is to access to \emph{index.html} and \emph{index.php} 
+from a remote web browser to check if nginx and php work well on your server. 
+\\\\
+To perform that, type the IP address of your RPi on your PC web browser -- 
+followed by /index.html and then /index.php -- and you will see nginx welcome page 
+and php config respectively.
+
+\subsection{MySQL}
+% 2 things : mysql and mysql + php
+\begin{lstlisting}[language=bash,caption=Test mySQL installation]
+$ mysql -uroot    # Connect to local database with root user
+> show databases; # List of databases
+> use mysql;      # Go into mysql database
+> show tables;    # List of tables in current database
+
+# Perform SQL query to list users
+> select host, user, pasword from user;
+> exit; # Logout from local database
+
+# If nothing works try to launch mysql install script
+# user: user account used by mysql service
+# ldata: path to MariaDB data directory
+# basedir: path to MariaDB installation directory
+$ mysql_install_db --user=mysql --ldata=/var/lib/mysql 
+    --basedir=/usr
+\end{lstlisting}
+
+\section{Set custom directory}
+Nginx default setup set this directory as the root of 
+your server but websites are usually hosted in \texttt{/var/www} so I will explain 
+you how to move the welcome page into that new file.
+
+\begin{lstlisting}[language=bash,caption=Move nginx welcome page]
+# Create /var/www directory and move into it
+$ cd /var
+$ mkdir www # Create a folder named "www"
+$ cd mkdir
+
+# Copy directory (with -r) source destination
+$ cp -r /usr/share/nginx/html/ /var/www/
+
+# Move a directory but if source and destination
+# are in same directory rename source
+$ mv /var/www/html /var/www/home
+\end{lstlisting} 
+
+Before trying to access to your website it will be necessary to configure nginx 
+and php for the new path. The sample nginx configuration file contains some 
+help to do specific things so we will save it and create a new one with the 
+following example.
+
+\begin{lstlisting}[language=bash,caption=Configure nginx and php]
+# Save and change nginx file
+$ mv /etc/nginx/nginx.conf /etc/nginx/nginx.conf.old
+$ nano /etc/nginx/nginx.conf # See following example
+
+# Update php config file
+# Search open_basedir and add ":/var/www/" at the end
+$ nano /etc/php/php.ini
+
+# Do not forget to reload and restart services
+\end{lstlisting} 
+\lstset{language=bash,caption=nginx configuration}
+\lstinputlisting{code/nginx.conf}
+
+% /usr/share/webapps/phpMyAdmin
+% link + enable + nginx config
+% domain
+\end{document}

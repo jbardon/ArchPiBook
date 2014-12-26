@@ -19,6 +19,10 @@
 
 \usepackage{comment}        % Comment environement for blocks
 
+\usepackage{array}          % Custom array
+\usepackage{multirow}       % Row merging in tabular
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+
 % \usepackage{nicefrac} % One line fraction
 % \usepackage[parfill]{parskip}  % Spaces instead of indentation between paragraphs
 
@@ -30,7 +34,8 @@
     captionpos=b,                    
     keepspaces=true,                                                                                       
     tabsize=4,
-    frame=single %lines
+    frame=single, %lines
+    moredelim=[is][\underbar]{_}{_} % underlines permitted without escape character
 }
 \lstset{style=customstyle}	
 
