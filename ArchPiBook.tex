@@ -1,16 +1,28 @@
 \documentclass[12pt,a4paper]{book}
 
-\usepackage[utf8]{inputenc}
-\usepackage[T1]{fontenc}
-\usepackage{lmodern}
+\usepackage[utf8]{inputenc} % Character encoding
+\usepackage[T1]{fontenc}    % Large font encoding
+\usepackage{lmodern}        % Latin modern font
 
-\usepackage{hyperref}
-\usepackage{graphicx}
-\usepackage[english, frenchb]{babel}
+\usepackage{hyperref}       % Http links
+\usepackage{graphicx}       % Include graphics extension
+\usepackage[frenchb,english]{babel} % Typographical rules according to languages
 
-\usepackage{menukeys}
+\usepackage{menukeys}       % Include keyboard keys
+\usepackage{microtype}      % Better spacing
 
-\usepackage{listings}	
+\usepackage{todonotes}      % Insert todo notes
+\usepackage{booktabs}       % Nice tables
+
+\usepackage{fixltx2e}       % Fix few things in latex
+\usepackage[american]{isodate} % Date formating with language
+
+\usepackage{comment}        % Comment environement for blocks
+
+% \usepackage{nicefrac} % One line fraction
+% \usepackage[parfill]{parskip}  % Spaces instead of indentation between paragraphs
+
+\usepackage{listings}	   % Code insertion
 \lstdefinestyle{customstyle}{
     basicstyle=\footnotesize,
     breakatwhitespace=false,         
@@ -20,8 +32,9 @@
     tabsize=4,
     frame=single %lines
 }
- 
 \lstset{style=customstyle}	
+
+
 	
 \title{ArchPi cheat book}
 \author{Jérémy Bardon}
@@ -37,5 +50,6 @@
 \include{Introduction}
 \include{ArchLinuxInstallation}
 \include{BasicSetup}
+\include{WebServer}
 
 \end{document}
