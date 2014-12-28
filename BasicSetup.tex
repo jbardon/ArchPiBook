@@ -1,5 +1,5 @@
+%\documentclass[12pt,a4paper]{book}\usepackage{array}\usepackage{multirow}\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}\usepackage{multirow}\usepackage[utf8]{inputenc}\usepackage[T1]{fontenc}\usepackage{lmodern}\usepackage{hyperref}\usepackage{graphicx}\usepackage[english, frenchb]{babel}\usepackage{listings}	\lstdefinestyle{customstyle}{basicstyle=\footnotesize,breakatwhitespace=false,breaklines=true,captionpos=b,keepspaces=true,tabsize=4,frame=single,moredelim=[is][\underbar]{_}{_}}\lstset{style=customstyle}\usepackage{menukeys}\begin{document}\tableofcontents
 \chapter{Basic setup}
-
 \section{Change language}
 There are no default languages selected in ArchLinux but the keyboard map is set to 
 qwerty\footnote{Most common layout for keyboards} at the beginning. To choose 
@@ -164,17 +164,48 @@ you are logged with a regular account you can not use it. Instead of logout and
 login with root user -- remember do not use this account -- just add 
 \texttt{sudo} before your command.
 
+\section{System update and timezone}
+As I said before -- in ArchLinux presentation\ref{section:ArchVsRaspbian}--, the 
+system updates are based on rolling system principle. Therefore, you can update 
+your system at anytime without reboot.
+
+\begin{lstlisting}[language=bash,caption=Update ArchLinux]
+# S: synchronize packages list
+# y: force refresh
+# u: upgrade all outdated packages
+$ pacman -Syu
+\end{lstlisting}
+
+Each time you get a new device (smartphone, PC, ..) you have to set your timezone 
+to have your system on time. It is much important on a server especially for 
+logs feeds by your services.
+
+\begin{lstlisting}[language=bash,caption=Set your timezone]
+# Current timezone
+$ timedatectl status
+
+# List available timezones
+# Can add "| grep Eur" to limit result
+# Only lines which contains "Eur" are displayed
+#
+$ timedatectl list-timezones
+
+# Set your timezone (Europe/Paris for example)
+# You must be root (use sudo)
+$ timedatectl set-timezone Europe/Paris
+\end{lstlisting}
+
 \section{Setup remote connexion}
 If you want to keep working with your regular computer on the RPi -- without two 
 screens and two keyboards -- it possible to setup a remote connexion with 
 \texttt{ssh}\footnote{Remote secure shell access}.
 \\\\
-On the system there are many programs as \texttt{ssh}  or web server launched 
+On the system there are many programs as \texttt{ssh} or web server launched 
 in background. These programs are regularly started at system startup and 
 are called \emph{daemons} or \emph{services}. 
 \\\\
-Before trying to connect to 
-your Raspberry you should check if \texttt{sshd} -- for ssh daemon -- is running.
+Before trying to connect to your Raspberry you should check if \texttt{sshd} 
+-- for ssh daemon -- is running.
 
 \begin{lstlisting}[language=bash,caption=Check service state]
 $ systemctl status sshd  # Check service state
@@ -198,14 +229,94 @@ machine:
 					tool for this kind of work
 \end{description}
 
+\begin{figure}[h]
+	\centering
+	\includegraphics[scale=0.6]{images/PuttyConnect.png}
+	\caption{PuTTY connexion interface}
+	\label{figure:WifiMenu}
+\end{figure}
+
+\label{theme:ip}
 Whathever the system you are using, two informations are necessery to perform 
 an ssh connexion : remote account --  created in section \ref{subsec:SimpleUser} 
 -- and remote machine IP or domain name.
+\\\\
+In the case you did not have domain name for your RPi\ref{theme:dns}, you can only 
+use it's IP address. The \texttt{ifconfig} command will help you to get this 
+address but be carefull about how your RPi is connected to your network: ethX 
+means wired and wlanX is wireless.
 
 \begin{lstlisting}[language=bash,caption=SSH with command line]
+# On your RPi
+# ifconfig (interface configurator): list interfaces
+# Here the IP address of my RPi is 192.168.0.23
+#
+$ ifconfig
+eth0: flags=4099<UP,BROADCAST,MULTICAST>  mtu 1500
+	...
+
+lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536
+    ...
+
+wlan0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+    inet 192.168.0.23  netmask 255.255.255.0  broadcast 192.168.0.255
+    ...
+     
+# On your Remote PC
 # Format: username@IP (or domain)
 $ ssh jeremy@192.168.0.2         # Initiate ssh connexion
 jeremy@192.168.0.23's password:  # Type your account password
 
 $ exit  # Stop ssh connexion and go back to local terminal
 \end{lstlisting}
+
+\section{Remote access to your files}
+
+If you want to manage your server files from a remote computer you can use 
+FTP\footnote{FTP for File Transfer Protocol} which will be a service on your 
+RPi. 
+\\\\
+There are a lot of ways to add an FTP access to your server and I choose to use 
+\emph{vsftpd} -- for very secure ftp daemon -- a secure solution to our problem. 
+With this protocol you can connect yourself to the server as an anonymous user 
+-- no username and no password -- or you can use your account on the server. 
+\\\\
+In my configuration, I enabled access to logged users only but feel free to 
+enable anonymous access (think about security).
+
+\begin{lstlisting}[language=bash,caption=VsFTPd setup]
+$ pacman -S vsftpd  # Install package
+
+# Change settings in /etc/vsftpd.conf
+$ nano /etc/vsftpd.conf
+
+# Enable anonymous access uncomment
+anonymous_enable=YES
+anon_upload_enable=YES
+anon_mkdir_write_enable=YES
+
+# Enable logged users access uncomment
+local_enable=YES
+write_enable=YES
+local_umask=022
+
+# Enable and start service
+$ systemctl enable vsftpd
+$ systemctl start vsftpd
+\end{lstlisting}
+
+Your FTP server is running, it is time for remote connexion. The most used 
+multiplatform tool is FileZilla an FTP client with a graphic interface but some 
+Windows users like WinSCP.
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[scale=0.4]{images/FileZillaConnect.png}
+	\caption{FileZilla connexion interface}
+	\label{figure:WifiMenu}
+\end{figure}
+
+As for SSH connexion you need your RPi IP address (or domain name, see 
+\ref{theme:ip}) and your account informations -- username and password -- if you 
+did not enabled anonymous access to your server.
+%\end{document}
