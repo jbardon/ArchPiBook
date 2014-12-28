@@ -1,4 +1,4 @@
-\documentclass[12pt,a4paper]{book}\usepackage{array}\usepackage{multirow}\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}\usepackage{multirow}\usepackage[utf8]{inputenc}\usepackage[T1]{fontenc}\usepackage{lmodern}\usepackage{hyperref}\usepackage{graphicx}\usepackage[english, frenchb]{babel}\usepackage{listings}	\lstdefinestyle{customstyle}{basicstyle=\footnotesize,breakatwhitespace=false,breaklines=true,captionpos=b,keepspaces=true,tabsize=4,frame=single,moredelim=[is][\underbar]{_}{_}}\lstset{style=customstyle}\usepackage{menukeys}\begin{document}
+%\documentclass[12pt,a4paper]{book}\usepackage{array}\usepackage{multirow}\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}\usepackage{multirow}\usepackage[utf8]{inputenc}\usepackage[T1]{fontenc}\usepackage{lmodern}\usepackage{hyperref}\usepackage{graphicx}\usepackage[english, frenchb]{babel}\usepackage{listings}	\lstdefinestyle{customstyle}{basicstyle=\footnotesize,breakatwhitespace=false,breaklines=true,captionpos=b,keepspaces=true,tabsize=4,frame=single,moredelim=[is][\underbar]{_}{_}}\lstset{style=customstyle}\usepackage{menukeys}\begin{document}
 \chapter{Web server}
 \section{Nginx versus Apache}
 In web servers world there are three major actors: Apache, nginx and 
@@ -36,12 +36,12 @@ accelerez-serveur-web-raspberry}} but others are personnal.
 	\end{tabular}
 	\caption{Advantages and drawbacks of nginx}
 \end{table}
-
+\newpage
 \section{Installation}
 To run a non-static website, nginx is not sufficient we also need to install PHP 
 -- for dynamic pages -- and a mySQL database to save our precious data. In 
-addition, we will install phpMyAdmin which a tool -- written in PHP -- to manage 
-a mySQL database through a web interface. 
+addition, we will install phpMyAdmin which is a tool -- written in PHP -- to 
+manage a mySQL database through a web interface. 
 
 \begin{lstlisting}[language=bash,caption=Install a full web server]
 # php-fpm is the nginx module for PHP
@@ -89,16 +89,37 @@ location ~ \.php$ {
 #   include        fastcgi_params;
     include        fastcgi.conf;
 }
+
+# Third problem: index pages must be .html or .html
+# want to add index.php
+#
+location / {
+    root           /usr/share/nginx/html;
+	
+	# Add index.php
+    index          index.html index.htm index.php;
+}
 \end{lstlisting}
 
-The last thing to do is enabling mysql extensions in php configuration files to 
-be able to perform SQL queries on local database through php scripts.
+Php does not enable mysql extensions by default in configuration files. Therefore, 
+to be able to perform SQL queries on local database through php scripts you need 
+to enable these extensions.
 \begin{lstlisting}[language=bash,caption=Enable php in nginx]
 $ nano /etc/php/php.ini
 
 # Remove ";" before mysql and mysqli extensions
 ;extension=mysql.so
 ;extension=mysqli.so
+\end{lstlisting}
+
+The last thing to do for security purposes is to change mySQL default root 
+password that is empty.
+\begin{lstlisting}[language=bash,caption=Change mySQL root password]
+# -u: considerer specified user
+# password: update user password
+# NewPassword: your password for root user
+#
+$ mysqladmin -u root password NewPassword
 \end{lstlisting}
 
 Each time you change nginx or php configuration files you have to reload and 
@@ -133,7 +154,8 @@ followed by /index.html and then /index.php -- and you will see nginx welcome pa
 and php config respectively.
 
 \subsection{MySQL}
-% 2 things : mysql and mysql + php
+There are two points to check with mySQL installation, first the database itself 
+and then communication between mySQL and PHP.
 \begin{lstlisting}[language=bash,caption=Test mySQL installation]
 $ mysql -uroot    # Connect to local database with root user
 > show databases; # List of databases
@@ -152,7 +174,13 @@ $ mysql_install_db --user=mysql --ldata=/var/lib/mysql
     --basedir=/usr
 \end{lstlisting}
 
-\section{Set custom directory}
+Yet you suceed to list database users with the dedicated command, the last step 
+is to check if we can do the same thing through php.
+\lstset{language=php,caption=Test php with mySQL}
+\lstinputlisting{code/checkdb.php}
+
+\section{Domains and custom directory}
+\subsection{Custom web directory}
 Nginx default setup set this directory as the root of 
 your server but websites are usually hosted in \texttt{/var/www} so I will explain 
 you how to move the welcome page into that new file.
@@ -190,7 +218,111 @@ $ nano /etc/php/php.ini
 \lstset{language=bash,caption=nginx configuration}
 \lstinputlisting{code/nginx.conf}
 
-% /usr/share/webapps/phpMyAdmin
-% link + enable + nginx config
-% domain
-\end{document}
+\subsection{Subdomains and site setup}
+Nginx uses the same principles as Apache in sites management. Indeed, in nginx 
+configuration directory -- \texttt{/etc/nginx/} -- there are two folders called 
+respectively \emph{site-available} and \emph{site-enabled} and in 
+\emph{nginx.conf} file there must be a line which loads sites in 
+\emph{site-enabled}.
+
+\begin{lstlisting}[language=bash,caption=Nginx domains architecture]
+# First check: site-available and site-enabled exist
+#
+# ls (list segment): list of files in given directory 
+# "|": pass result to the next command
+# grep site: display lines which contains "site"
+# 
+$ ls /etc/nginx | grep site
+
+# Create these folders if there are not displayed
+#
+# mkdir: create directory with specified name
+#
+$ mkdir /etc/nginx/site-available /etc/nginx/site-enabled
+
+# Second check: site-enable is included in nginx.conf
+#
+# cat: display specified file in console
+#
+$ cat /etc/nginx/nginx.conf | grep site
+
+# If not in nginx.conf add the following line:
+#   include /etc/nginx/site-enabled/*;
+# in html block
+#
+$ nano /etc/nginx/nginx.conf
+\end{lstlisting} 
+
+Once the nginx setup completed, you can follow with the creation of a subdomain. 
+As an example, we would like to access to phyMyAdmin interface -- see 
+\ref{section:PhpMyAdmin} for installation -- with \href{http://pma.local.pi}
+{\texttt{http://pma.local.pi}} instead of using \href{http://RpiIP/phpmyadmin/}
+{\texttt{http://RpiIP/phpmyadmin/}}. 
+
+\begin{lstlisting}[language=bash,caption=Create a subdomain]
+# Create phpmyadmin file with the next example as content
+$ nano /etc/nginx/site-available/phpmyadmin
+
+# Create a link in site-enable to declare it as enabled
+$ ln -s /etc/nginx/site-available/phpmyadmin /etc/nginx/site-enabled/
+
+# Check the link
+$ ls -l /etc/nginx/site-enabled/
+
+# Do not forget to restart service
+\end{lstlisting} 
+
+\lstset{language=bash,caption=PhpMyAdmin domain example}
+\lstinputlisting{code/phpmyadmin}
+
+The final step to be able to access to \href{http://pma.local.pi}
+{\texttt{http://pma.local.pi}} is to match this domain with the RPi IP address. 
+Usually, there two ways to perform that kind of things :
+\begin{description}
+	\item[DNS\footnotemark server]\footnotetext{DNS for Domain Name Service} 
+					  A service with matches 
+					  domain names with IP address. If your router is the server 
+					  it will work for all connected devices.
+					  
+	\item[hosts file] Local file in your machine which overrides DNS server and 
+					 thus works only for your machine.\\
+\end{description}
+
+For the first method it depends on your material but for the second I can tell you 
+that on Linux and Mac OSX \emph{hosts} file is located in \texttt{/etc/hosts} and 
+on Windows in \texttt{C:\textbackslash{}Windows\textbackslash{}system32
+\textbackslash{}drivers\textbackslash{}etc\textbackslash{}hosts}. 
+\\\\
+Add a line like \og{}\texttt{RpiIP pma.local.pi}\fg{} in this file opened with 
+root access (for Windows launch text editor with administrator rights).
+
+\section{PhpMyAdmin setup}\label{section:PhpMyAdmin}
+The installation package puts phpMyAdmin files in \texttt{/usr/share/webapps/
+phpMyAdmin} directory so if you want to access to the web interface you need to 
+move this directory in \texttt{/usr/share/nginx/html}. However, it would be more 
+logical to let application files where there are, so we will create a link.
+
+\begin{lstlisting}[language=bash,caption=Configure phpMyAdmin]
+# ln creates a link to source in destination
+# -s symbolic link (not change link if source has been moved)
+#
+$ ln -s /usr/share/webapps/phpMyAdmin/ /usr/share/nginx/html/phpmyadmin
+\end{lstlisting} 
+
+Now, you can try to connect to \texttt{RPiIP/phpmyadmin} from a remote 
+browser and use the root account of mySQL (remember you changed the default 
+password).
+\\\\
+If you get a warning message which tells you it can not access 
+\emph{config.inc.php} it is because phpMyAdmin puts this file in it's 
+installation directory and also in \texttt{/etc/webapps/phpmyadmin} but it has 
+no rights on the second one.
+
+\begin{lstlisting}[language=bash,caption=Fix phpMyAdmin troubles]
+# Update php config file
+# Search open_basedir and add ":/etc/webapps/" at the end
+$ nano /etc/php/php.ini
+
+# Do not forget to reload and restart php service
+\end{lstlisting} 
+%\end{document}

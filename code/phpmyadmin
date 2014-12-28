@@ -1,0 +1,14 @@
+# /etc/nginx/site-available/phpmyadmin
+
+server {
+	root /usr/share/webapps/phpMyAdmin;
+	index index.php;
+
+	server_name pma.local.pi;
+	
+	location ~ \.php$ {
+		fastcgi_pass unix:/run/php-fpm/php-fpm.sock;
+		fastcgi_index index.php;
+		include fastcgi.conf;	
+	}
+}
