@@ -1,0 +1,380 @@
+%\documentclass[12pt,a4paper]{book}\usepackage{array}\usepackage{tabu}\usepackage{multirow}\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}\usepackage{multirow}\usepackage[utf8]{inputenc}\usepackage[T1]{fontenc}\usepackage{lmodern}\usepackage{hyperref}\usepackage{graphicx}\usepackage[english, frenchb]{babel}\usepackage{listings}	\lstdefinestyle{customstyle}{basicstyle=\footnotesize,breakatwhitespace=false,breaklines=true,captionpos=b,keepspaces=true,tabsize=4,frame=single,moredelim=[is][\underbar]{_}{_}}\lstset{style=customstyle}\usepackage{menukeys}\begin{document}
+\chapter{Jukebox}
+\section{Do I need that?}
+Maybe you want to use your Raspberry as a jukebox controlled remotely, so your 
+music will be played on sound devices -- through HDMI or DVI port -- attached to 
+your RPi.
+\\\\
+A MPD\footnote{MPD for Music Player Daemon} server is exactly what you need and in 
+addition it can manage playlists -- not explained here -- and it exists a plenty 
+of applications\footnote{A list of client are available on mpd wiki, see 
+\href{http://mpd.wikia.com/wiki/Clients}{mpd.wikia.com/wiki/Clients}} which are 
+dedicated or compatible with. 
+\\\\
+In following sections you will learn how to setup your server and then you will 
+discover four clients for various platforms (PC and smartphones).
+
+\section{MPD setup}\label{section:MpdSetup}
+
+There are two things you need to take care of when you want to install a mpd 
+server: how to play music on the RPi and where your music will be stored. 
+\\\\
+In the example, it is a \og{}classic\fg{} situation wherein you music is located 
+in a folder called \emph{music} placed in a user home directory.
+
+\begin{lstlisting}[language=bash,caption=Install mpd server]
+# mpd is the server
+# alsa-utils manage your RPi audio outputs
+#
+$ pacman -S mpd alsa-utils
+
+# Update the mpd config file to work with
+# the RPi audio (see the next example)
+$ nano /etc/mpd.conf
+
+# Mpd files (including music database) are located
+# in /var/lib/mpd so you have to change it's owner
+# for the mpd user to be able to access it
+#
+# chown: change file or diretory owner
+# "mpd:mpd": new owner (user and his group)
+#
+$ chown mpd:mpd /var/lib/mpd
+
+# My music is located in the SD card, where the system
+# is installed: /home/jeremy/music
+#
+# In default configuration, your home directory can only 
+# be crossed by you but the mpd user must access to your
+# music inside
+#
+# chmod: changes rights on a file or a directory
+# o+x: anyone can cross the specified directory
+# or execute the file (if it is a file)
+#
+$ chmod o+x /home/jeremy
+\end{lstlisting} 
+
+\lstset{language=bash,caption=Mpd configuration file,label=listing:MpdConfigFile}
+\lstinputlisting{code/mpd.conf}
+
+A RPi has two audio outputs (HDMI and DVI) so you can play your music on your 
+screen (or TV, or audio system plugged in your TV) and in a headset or any device 
+which provides a jack input. 
+\\\\
+Do not forget the power of a Raspberry, is modularity can help you to setup 
+bluetooth or airplay wireless network to play your music. However, these 
+interesting solutions will be not covered in this book.
+\\
+\begin{lstlisting}[language=bash,caption=Set audio output]
+# Set audio output to HDMI
+# Last number: 0 (auto, avoid it), 1 (DVI), 2 (HDMI)
+$ amixer cset numid=3 2
+
+# Fix HDMI troubles
+# Uncomment hdmi_force_hotplug=1 and hdmi_drive=2
+$ nano /boot/config.txt
+
+# You must reboot for HDMI changes
+$ reboot
+
+# Enable, start and then check if the service started
+$ systemctl enable mpd
+$ systemctl start mpd
+$ systemctl status mpd
+\end{lstlisting}
+
+\section{Music directory on usb device}
+\subsection{Connect an usb device}
+Connect a device to an linux system as ArchLinux is called \emph{mount}, once you
+connected you device the system will be able to see it with no ways to access it.
+\\\\
+It is after the \emph{mount} operation that the system get an access to the device 
+and programs as mpd will be able to read on.
+
+\begin{lstlisting}[language=bash,caption=Mount an external device]
+# List of connected devices
+$ fdisk -l
+# One device: mmcblk0, zero because you can have others sd cards 
+# called mmcblk1, mmcblk2, ...
+Disk /dev/mmcblk0 : 7,5 GiB, 8017412096 bytes, 15659008 sectors
+
+# Divided in 2 parts (partitions)
+# Note: this table was truncated in lines and columns
+Device          Size    Id  Type
+/dev/mmcblk0p1  116,2M   e  W95 FAT16 (LBA)
+/dev/mmcblk0p2    7,3G  85  Linux extended
+
+# Create a directory in /mnt where you
+# will see your device files
+$ mkdir /mnt/sdcard
+
+# Mount a device (mmcblk0 for example)
+#
+# Can add some options:
+# -t ntfs-3g: format type of the device
+# -o uid=user,gid=group: owner of mounted directory
+#
+$ mount /dev/mmcblk /mnt/sdcard
+
+# Unmount a device: use the target directory
+# choosed on mounting operation
+#
+# Some devices may be used by programs or services
+# Be careful you are not in your device directory (use pwd)
+#
+$ umount /mnt/sdcard
+
+# List mounted directories
+$ mount
+/dev/sda1 on /mnt/hd1 type vfat 
+\end{lstlisting}
+
+If you use some devices with a Windows system they are maybe formated with the 
+\emph{ntfs} format that is not recognize by default on a linux based system.
+\\\\
+To solve this trouble you have to install \emph{ntfs-3g} which contains 
+necessary drivers and an easiest way to mount ntfs devices.
+\begin{lstlisting}[language=bash,caption=Mount ntfs devices]
+# Install the package with ntfs drivers
+$ pacman -S ntfs-3g
+
+# For ntfs-3g works you need to reboot
+$ reboot
+
+# Mount your ntfs device
+# Short for "mount -t ntfs-3g /dev/mmcblk /mnt/sdcard"
+$ ntfs-3g /dev/mmcblk /mnt/sdcard
+\end{lstlisting}
+
+\subsection{Change directory in mpd}
+To change your music directory in MPD this is only one file to update 
+mpd.conf (refer to \ref{listing:MpdConfigFile}) which contains the path to your 
+music on \emph{music\_directory} line.
+\\\\
+Nevertheless, this is one thing you need to take care of: rights on every directory 
+in your path. In linux system, there are three access types : read, write and 
+execute knowing execute means \og{}can cross\fg{} for directories.
+
+\begin{lstlisting}[language=bash,caption=Analyze rights on home]
+$ ls -l / | grep home
+drwxr-x--x  3 root root  4096 18 dec.  23:48 home
+\end{lstlisting}
+
+Let's analyze the previous result for \texttt{/home} directory to 
+able to understand rights easily.
+
+\begin{table}[h]
+\centering
+	\begin{tabu}{p{2cm}|p{40px}|l|l|p{40px}|l|p{2cm}}
+		\rowfont{\bfseries\footnotesize}
+		Rights (modes) & Links number & Owner & Group & Size (in bytes) & Last update   & Folder name\\
+		&&&&&&\\
+		\rowfont{\ttfamily\small}
+		drwxr-x--x     & 3            & root  & root  & 4096            & 18 dec. 23:48 & home\\
+	\end{tabu}
+	\caption{Details on \texttt{ls -l} syntax}
+\end{table}
+
+Now, we can decrypt \texttt{ls -l} results and identify who is the owner of a 
+file and of which group it belongs. With the first part of the output it is 
+possible to deduce what things a user can do on the given file.
+
+\begin{table}[h]
+\centering
+	\begin{tabular}{rl}
+		\hline
+		\multicolumn{2}{|c|}{Indicators}\\
+		\hline
+		d   & File type: directory (d), symbolic link (l), file (-)\\
+		&\\
+		\hline
+		\multicolumn{2}{|c|}{Rights -- nothing(-) read(r) write(w) execute(x)}\\
+		\hline
+		rwx & Owner, got all rights usually\\ 
+		r-w & Users who belongs to group\\ 
+		--w & Others\\ 		
+	\end{tabular}
+	\caption{Rights on a file}
+\end{table}
+
+Remember, the initial purpose was to change our mpd music directory so let's 
+change the directory to \og{}\texttt{/home/jeremy/music}\fg{} with good rights 
+to ensure the \emph{mpd} user will be able to access to the \emph{music} directory 
+and read files into.
+
+\begin{lstlisting}[language=bash,caption=Check rights on path]
+# We want to check that mpd user can acces
+# to /home/jeremy/music, we have to check the three directories
+#
+$ ls -l / | grep home
+
+# Anyone can cross home: OK
+drwxr-xr-x  3 root root  4096 18 dec.  23:48 home
+
+$ ls -l /home | grep jeremy
+# Nobody can cross this directory exept jeremy: NOT OK
+drwx------ 4 jeremy jeremy 4096 30 dec.  11:56 jeremy
+
+# Add execute right for everyone because mpd do not 
+# belongs to jeremy group
+#
+# Format: level+/-right
+#   level: u (owner), g (owner group), o (anyone)
+#   +/-: + to add right, - to remove it
+#   right: r (read), w (write), x (execute)
+#
+$ chmod o+x /home/jeremy
+
+$ ls -l /home | grep jeremy
+# Anyone can cross this directory: OK
+drwx-----x 4 jeremy jeremy 4096 30 dec.  11:56 jeremy
+
+$ ls -l /home/jeremy/ | grep music
+# Anyone can read music files into this directory: OK
+drwxr-xr-x 2 jeremy jeremy 4096 29 dec.  12:18 music
+
+# Now the full path has been verified: mpd can cross each
+# directories from root and read in music folder
+\end{lstlisting}
+
+\section{Classic and web clients}
+
+There many mpd clients available and it is necesarry to distinguish thoses which 
+are installed on the server -- as web clients -- and others that are on a remote 
+machine owned by the client.
+
+\subsection{External clients}
+I will present you two applications which are mpd client and as much as possible 
+multiplatform or at least compatible with most common devices.
+\\\\
+The first one is \texttt{MPDroid} an Android application available on the play 
+store\footnote{Download MPDroid on the play store at \href{http://play.google.com/
+store/apps/details?id=com.namelessdev.mpdroid}{play.google.com/store/apps/details?
+id=com.namelessdev.mpdroid}} which enable you to manage your mpd server depending 
+on the wireless network you are connected.
+\\\\
+GMPC\footnote{Gnome music player client} is the second client that I will talk 
+about because it's strong point is that it is multiplateform so compatible with 
+Windows, Mac OSX and Linux systems.
+\\\\
+To setup the connexion between your application and the mpd server on the RPi the 
+only thing you need is it's IP address or domain name. That is why we did not 
+change the default port -- 6600 -- and set a password to access it but feel free 
+to do it if it is necessary for you.
+
+\subsection{YMPD web client}
+YMPD is a lightweight and easy to install web client interface build over the 
+bootstrap. It means the interface is really responsive and it can be used 
+either on the PC or on a smartphone through a web browser.
+
+\begin{lstlisting}[language=bash,caption=ympd setup]
+# wget: tool to download files from network
+$ pacman -S wget
+
+# Use wget to download ympd release
+$ wget http://www.ympd.org/downloads/ympd-1.2.3-armhf.tar.bz2
+
+# Unpack ympd from the downloaded archive
+$ tar -xvf ympd-1.2.3-armhf.tar.bz2
+
+$ rm ympd-1.2.3-armhf.tar.bz2 # Remove unused archive
+$ mv ympd /usr/bin            # Move executable to the "classic" directory
+
+# Run ympd server and choose the port you will
+# use to connect to it
+$ ympd --webport 2020 # Any port > 1024
+\end{lstlisting}
+
+Now, you can connect to the ympd web interface from any web browser access to 
+\href{http://RPiIP:2020}{http://RPiIP:2020} but pay attention to use the port 
+you choosed when you launched ympd your server.
+
+\subsection{Ampache}
+If you are looking for a more complex and customizable solution for your mpd 
+server web client, Ampache can be the answer to your problem.
+\\\\
+It is php based application (similar to phpMyAdmin) which allows you to manage 
+music catalogs  -- on your server and on remote machines -- and play them on the 
+server or locally in your browser (with streaming).
+
+\begin{lstlisting}[language=bash,caption=Download Ampache]
+# You will need unzip to unpack ampache 
+$ pacman -S unzip
+
+# Download last ampache release
+$ wget https://github.com/ampache/ampache/archive/develop.zip
+
+# Unpack ampache, remove zip file and rename ampache directory
+$ unzip develop.zip 
+$ rm develop.zip
+$ mv ampache-develop ampache
+
+# Create a domain with nginx by using the following
+# config file (too long but necessary) available at :
+# http://github.com/ampache/ampache/wiki/Installation#nginx
+#
+# See Subdomains and site setup in Web server chapter of this book
+# if you have some troubles
+\end{lstlisting}
+
+Ampache offers a php script called \emph{install.php} that you can reach by going 
+to \href{http://RPiIP/install.php}{http://RPiIP/install.php} but in my case it 
+allways redirect me to \emph{/test.php} which tells me that I do not respect 
+prerequires.
+\\\\
+Finally, once I launched install script after some setup, I have realized that 
+pretty much all things I have done before had to be done by this script. 
+\\\\
+As a result either you are lucky and the install script works or follow me for 
+some setup to fill requirements and tell to the install script to do nothing 
+because we have done it's work.
+
+\begin{lstlisting}[language=bash,caption=Ampache setup]
+# The test page show me 6 errors at the begin
+# here are the "name" of theses tests plus the 
+# ways to pass them
+
+# MySQL and PHP iconv extension
+# Problem: php extensions not enabled
+#
+# Remove ";" before: extension=pdo_mysql.so
+#                     extension=iconv.so
+#
+$ nano /etc/php/php.ini
+$ systemctl reload php-fpm
+
+# Configuration file readibility and validity
+# Problem: wrong name for ampache config file
+#
+$ cd /usr/share/webapps/ampache/config
+$ mv ampache.cfg.php.dist ampache.cfg.php
+
+# Database connexion
+# Problem: user account for database not set in 
+# ampache configuration file
+#
+# Fill following fields with right values
+# (remember you may changed the root password)
+#        database_username = root
+#        database_password = password
+#
+$ nano /usr/share/webapps/ampache/config/ampache.cfg.php
+
+
+# Database table
+# Problem: ampache database and tables not created
+#
+$ mysql -u root -ppassword # no space between -p and password
+> create database ampache;
+> use ampache;
+> source /usr/share/webapps/ampache/sql/ampache.sql;
+> exit
+\end{lstlisting}
+
+At this point, Ampache let you run the install script but it says some tests about 
+the configuration files fails, ignore them and then skip database and configuration 
+file steps. The last thing to do is creating an admin account to connect yourself 
+to ampache web client.
+
+%\end{document}
