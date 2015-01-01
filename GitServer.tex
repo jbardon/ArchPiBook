@@ -1,0 +1,257 @@
+\documentclass[12pt,a4paper]{book}\usepackage{array}\usepackage{tabu}\usepackage{multirow}\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}\usepackage{multirow}\usepackage[utf8]{inputenc}\usepackage[T1]{fontenc}\usepackage{lmodern}\usepackage{hyperref}\usepackage{graphicx}\usepackage[english, frenchb]{babel}\usepackage{listings}	\lstdefinestyle{customstyle}{basicstyle=\footnotesize,breakatwhitespace=false,breaklines=true,captionpos=b,keepspaces=true,tabsize=4,frame=single,moredelim=[is][\underbar]{_}{_}}\lstset{style=customstyle}\usepackage{menukeys}\usepackage{comment}\begin{document}
+\chapter{Git server}
+\section{Why you would use Git}
+For some reasons, you need to keep several versions of document so you make 
+copies -- can be long and space consumer -- but it still difficult to get the 
+last version when more than one person works on one document.
+\\\\
+Git is a versionning tool which can do this work for you and in addition keep 
+traces of who modified what on each document on a project. This tool will be not  
+intrusive and can be used at every moments of a projet -- even if it is allready 
+started -- it ensure that you have a project which is \og{}good\fg{} and 
+up-to-date version.
+\\\\
+Largely used in programming projects it can be usefull for any types of projects 
+which contains files readable by a simple text editor. You can get an idea of what 
+is git by browsing projects on \href{http://github.com}{github.com} which is the 
+most famous git projects host because it is free for public (open source) projets.
+
+\section{Install Git and add projects}
+To visualize git projects on web interface the first thing is need to have git 
+project. In order to create our own projet we will download an existing one 
+to have a real history and some things to visualize. 
+\\\\
+I choose to use an open source project -- Firefox OS\footnote{Firefox OS is the 
+operating system developed by the Mozilla foundation for smartphones. More 
+informations on \href{https://www.mozilla.org/en-US/firefox/os/}{www.mozilla.org/
+en-US/firefox/os/}, sources availables on \href{https://github.com/mozilla/
+firefox-ios}{github.com/mozilla/firefox-ios}} -- because it is quite fast to 
+download and have some folders with enough commits to be interesting.
+
+\begin{lstlisting}[language=bash,caption=Install git and add projects]
+# Install git package
+$ pacman -S git
+
+# Create repositories(projects) directory
+$ mkdir /srv/git
+
+# Get an existing project on github to test our web 
+# interface, Firefox OS in this example.
+$ cd /srv/git
+$ git clone https://github.com/mozilla/firefox-ios.git
+\end{lstlisting}
+
+There are a few directories that are most used for repositories but I retained two 
+of them: \texttt{/home/git/} and \texttt{/srv/git/}. 
+\\\\
+In ArchLinux, websites and ftp are by default in \emph{/srv} and \emph{/home/git} 
+is the home directory for \emph{git} user -- which is not a physic user -- so to 
+keep a kind of consistency -- in my opinion -- I prefer the second alternative. 
+
+\section{Host repositories}
+\subsection{Create a new project}
+Host a git project is quite easy because it is really close from creating a local 
+git repository. You just must think about adding \emph{--bare} option to specify 
+that your project is not a working copy. 
+\begin{lstlisting}[language=bash,caption=Create a repository on your server]
+# Let's create a new git project called "project"
+# Naming convention: add .git at the end of your project name
+# to specify it is not a working copy
+#
+$ mkdir /srv/git/project.git
+$ cd /srv/git/project.git
+$ git init --bare # --bare: not a working copy
+\end{lstlisting}
+
+On a remote machine on which you want to work, clone the project and do a first 
+commit on your project.
+\begin{lstlisting}[language=bash,caption=Clone repository to work]
+# Clone project
+# username is your username for local account on the server 
+$ git clone username@RPiIP:/srv/git/project.git
+
+# Create a new file and commit
+$ cd project
+# New file called README.md with "New project" text inside
+$ echo "New project" > README.md 
+$ git commit -am"First commit"
+$ git push origin master # First time, after just "git push"
+\end{lstlisting}
+
+\subsection{Use an existing project}
+If you want to host a git project which allready it is possible to do. There two 
+possible situations:
+\begin{itemize}
+	\item The project is allready hosted by someone else or websites like GitHub 
+		  or BitBucket.
+	\item It is a local project so hosted locally
+\end{itemize}
+
+\subsubsection{Allready hosted}
+As you can imagine, the first situation is the easier to solve, you just have to 
+clone the repository from the server with a specific option.
+
+\begin{lstlisting}[language=bash]
+$ git clone username@RPiIP:/srv/git/project.git --bare
+\end{lstlisting}
+
+Note that the folder you will get will be named \emph{project.git} so it is not a 
+working copy. In addition, notice that is the same \emph{--bare} option as when 
+you create a new repository on the server.
+
+\subsubsection{Local project}
+The first thing to do is retrieve the local project on the server. There are many 
+ways to it, I advice to use FTP -- if you setup an FTP -- but for others here is 
+a simple way if you have a linux system.
+
+\begin{lstlisting}[language=bash]
+# Your project is named project
+$ scp username@RPiIP:/srv/git /local/path/to/project
+\end{lstlisting}
+
+With the working copy on your server, the last thing to do is clone the repository 
+as \emph{bare} locally and remove the working copy.
+
+\begin{lstlisting}[language=bash][Host repository from local copy]
+# Extract project informations
+$ git clone --bare /srv/git/projet /srv/git/project.git
+$ rm -r /srv/git/project
+\end{lstlisting}
+% Change remote ?
+	
+% Different from clone apparently
+\begin{comment}
+	\begin{lstlisting}[language=bash][Host repository from local copy]
+# Extract project informations
+$ mv /srv/git/project/.git /srv/git/project.git
+$ rm -r /srv/git/project
+
+# Declare repository as bare
+$ cd /sr	v/git/project.git
+$ git config --bool core.bare true
+	\end{lstlisting}
+\end{comment}
+\section{Web application for viewing}
+\subsection{GitWeb: Build-in solution}
+Gitweb is the web interface offered by git when you install it. Based on cgi 
+technology, it is a bit slow but very refined so easy to use and understand.
+\\\\
+You can see a live usage of git web at \href{http://repo.or.cz/w?a=project\_list}
+{repo.or.cz/w?a=project\_list}, browse projets, commit and all things you want and 
+before abandoning GitWeb keep in mind that we will improve a little bit the visual.
+
+\subsubsection{Installation and configuration}
+\begin{lstlisting}[language=bash,caption=Gitweb setup]
+# Gitweb is a cgi script, you need to install 
+# some packages
+$ pacman -S fcgiwrap spawn-fcgi
+
+# Update php configuration to accept .cgi files
+$ nano /etc/php/php-fpm.conf
+# Uncomment and add .cgi
+security.limit_extensions = .php .php3 .php4 .php5 .cgi
+
+# Set your repositories folder in gitweb.conf
+# Look at the next example
+$ nano /etc/gitweb.conf  # Is created of not exist
+\end{lstlisting}
+
+\lstset{language=bash,caption=gitweb.conf file}
+\lstinputlisting{code/gitweb.conf}
+
+\subsubsection{Configure nginx and install cgi tools}
+According to the ArchLinux wiki, it is necessary to change the \emph{fcgiwrap.service} 
+file because it uses spawn-fcgi so trust the wiki. Note you have to restart 
+fcgiwrap service after your updates.
+
+\lstset{language=bash,caption=fcgiwrap.service from wiki.archlinux.org/index.php/gitweb}
+\lstinputlisting{code/fcgiwrap.service}
+
+The standard subdomain file presented before will not work in this case because 
+gitweb does not contains php scripts but only one cgi script.
+
+\lstset{language=bash,caption=Gitweb configuration for nginx}
+\lstinputlisting{code/gitweb}
+
+\subsubsection{Finishing touch}
+After that, you will be able to access to your gitweb interface with the domain 
+you defined -- \texttt{gitweb.local.pi} in the example -- but if do not see any 
+projects although you set some of them in the directory you specified in 
+\emph{gitweb.conf}, try to launch git daemon.
+
+\begin{lstlisting}[language=bash,caption=]
+$ /usr/lib/git-core/git-daemon --inetd --export-all --base-path=/srv/git
+\end{lstlisting}
+
+\mbox{}\\\\
+The last thing you can do is replace the default theme the one developed by 
+kogakure\footnote{More informations on his web site: \href{http://kogakure.github
+.io/gitweb-theme/}{kogakure.github.io/gitweb-theme/}} which is a little bit more 
+appealing.
+
+\begin{lstlisting}[language=bash,caption=Install kogakure gitweb theme]
+# Save default theme
+$ cp -r /usr/share/gitweb/static/ /usr/share/gitweb/static.old
+
+# Retrieve kogakure theme, copy it in right folder
+# and delete unused files
+$ git clone https://github.com/kogakure/gitweb-theme.git
+$ cp gitweb-theme/git* /usr/share/gitweb/static
+$ rm -r gitweb-theme
+\end{lstlisting}
+
+\subsection{GitList: Simple GitHub clone}
+
+If you are looking for a git web interface which look like GitHub -- with less 
+side features -- GitList is probably a good alternative for you. 
+\\\\
+This project is hosted by GitHub at \href{https://github.com/klaussilveira/gitlist}
+{github.com/klaussilveira/gitlist} but as said in the README file, do not clone 
+the repository and prefer download the packaged version on the GitList website at 
+\href{http://gitlist.org}{gitlist.org}.
+
+\begin{lstlisting}[language=bash,caption=Download GitList]
+# Download
+$ cd /usr/share/webapps
+$ wget https://s3.amazonaws.com/gitlist/gitlist-0.5.0.tar.gz
+
+# Extract and remove unused files
+$ tar -xvf gitlist-0.5.0.tar.gz
+$ rm gitlist-0.5.0.tar.gz
+\end{lstlisting}
+
+Let's declare a new subdomain for GitList, a sample is available in it's directory 
+-- \texttt{/usr/share/webapps/gitlist/INSTALL.md} -- but here I will propose you 
+a shorter solution. Note you have to use at least one of these two sample because 
+GitList uses url rewriting.
+
+\lstset{language=bash,caption=GitList configuration for nginx}
+\lstinputlisting{code/gitlist}
+
+Now you can access to GitList interface but you may have some errors messages and 
+your are forced to fix these troubles.
+
+\begin{lstlisting}[language=bash,caption=Fix GitList troubles]
+# Message 1
+# The "/usr/share/webapps/gitlist/cache" folder must be writable 
+# for GitList to run.
+#
+$ mkdir /usr/share/webapps/gitlist/cache # If not exist
+$ chown http:http /usr/share/webapps/gitlist/cache
+
+# Message 2
+# Please, create the config.ini file.
+$ cd /usr/share/webapps/gitlist/
+$ mv config.ini-example config.ini
+
+# Message 3
+# Please, edit the config file and provide your repositories directory
+# Solution: set repositories[] = '/srv/git/'
+#
+$ nano /usr/share/webapps/gitlist/config.ini
+\end{lstlisting}
+
+\section{Gitolite: manage projects}
+Soon in libraries
+
+\end{document}
