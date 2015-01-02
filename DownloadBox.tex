@@ -1,0 +1,168 @@
+%\documentclass[12pt,a4paper]{book}\usepackage{array}\usepackage{tabu}\usepackage{multirow}\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}\usepackage{multirow}\usepackage[utf8]{inputenc}\usepackage[T1]{fontenc}\usepackage{lmodern}\usepackage{hyperref}\usepackage{graphicx}\usepackage[english, frenchb]{babel}\usepackage{listings}	\lstdefinestyle{customstyle}{basicstyle=\footnotesize,breakatwhitespace=false,breaklines=true,captionpos=b,keepspaces=true,tabsize=4,frame=single,moredelim=[is][\underbar]{_}{_}}\lstset{style=customstyle}\usepackage{menukeys}\usepackage{comment}\begin{document}
+\chapter{Download box}
+Many people uses their servers as seed boxes -- for torrent -- or an intermediate 
+to download their files faster because a server has an high speed connexion. 
+Considering you RPi will be behind you internet connexion it will be totally useless 
+for us.
+\\\\
+However it allows you to download big files -- for torrent with poor sources -- 
+without leaving your PC switched on all night and the RPi is a very low energy 
+consumer. In addition combined with an FTP or a file sharing system all your 
+downloads will be accessible for other people on your network.
+
+\section{Direct download with aria2}
+aria2 is download manager which is able to handle http an torrent links. It is 
+very easy to use with it's command line interface but we will add a web interface 
+at the top of it to manage our downloads remotely from any web browser.
+
+\begin{lstlisting}[language=bash,caption=Aria2 setup]
+$ pacman -S aria2
+
+# Download directory with access rights
+$ mkdir /srv/downloads 
+$ chmod o+w /srv/downloads
+
+# Create configuration file with new example
+$ nano /etc/aria2.conf
+\end{lstlisting}
+
+The configuration file can be set in any directory because you can specify to 
+aria2 which file to use for it's configuration. In this example, this file is 
+stored into \texttt{/etc} directory because it mostly contains configuration 
+files but you can put it in your home directory.
+
+\lstset{language=bash,caption=Aria2 configuration file}
+\lstinputlisting{code/aria2.conf}
+
+Now, you can use aria2 with it's command line interface but we will install the 
+web interface before testing it and specify the configuration file directory.
+
+\begin{lstlisting}[language=bash,caption=Install aria2 interface]
+# Retrieve last release and put it in the usual directory
+$ cd /usr/share/webapps/
+$ git clone https://github.com/ziahamza/webui-aria2.git
+
+# Create nginx domain or use this dirty way
+$ ln -s /usr/share/webapps/webui-aria2/ /usr/share/nginx/html/aria2
+
+# Setup and start a new service to run aria2 as a daemon
+# See next example 
+$ nano /usr/lib/systemd/system/aria2.service
+$ systemctl start aria2
+
+# You can try to download this image: 
+# http://www.mumbly58.fr/wp-content/uploads/2013/01/archlinux-logo.png
+$ ls /srv/downloads # must see image after download complete
+\end{lstlisting}
+
+Our web interface is directly connected to the aria2 program which have to be 
+launched at every moment. Especially when you want to see your downloads through 
+the web interface and even if they are stopped.
+\\\\
+Create a service which runs aria2 is the designated solution to complete this 
+kind of tasks so here is an example.
+
+\lstset{language=bash,caption=Run aria2 as a service}
+\lstinputlisting{code/aria2.service}
+
+\section{Torrent with rtorrent}
+
+The previous software -- aria2 -- can handle torrents downloading like rtorrent 
+but the second is dedicated and provides a very comfortable interface in the 
+console. 
+\\\\
+I do not know what are the technical differences but if you want not 
+use a web interface for torrents, rtorrent is the best solution in my opinion.
+
+\subsection{rTorrent installation}
+\begin{lstlisting}[language=bash,caption=rTorrent installation]
+$ pacman -S rtorrent
+
+# Torrents directory
+$ mkdir /srv/torrent
+$ chmod o+w /srv/torrent
+
+# Session directory for rtorrent operations
+$ mkdir /tmp/rtorrent
+$ chmod o+w /tmp/rtorrent
+
+# rTorrent configuration file, change the following options
+# according to the two directories you created before
+#
+# directory = /srv/torrents
+# session = /tmp/rtorrent
+#
+$ cp /usr/share/doc/rtorrent/rtorrent.rc ~/.rtorrent.rc
+\end{lstlisting}
+
+Considering there are no indications about how to use the rtorrent interface, I 
+will the main commands to use for your torrents management.
+
+\begin{table}[h]
+\centering
+	\begin{tabular}{lp{9cm}}
+		\keys{\return} & Select torrent file to add (use \keys{\tab} to see current 
+					 directory files)\\
+					 
+		\keys{\arrowkeyup} and \keys{\arrowkeydown} & Switch between seleced 
+					 torrent\\
+					 
+		\keys{\arrowkeyright} & Visualize selected torrent details\\
+	\\
+		\keys{\ctrl + S} & Start selected torrent\\
+		\keys{\ctrl + D} & Stop an active torrent and delete a stopped\\
+		\keys{\ctrl + Q} & Quit rtorrent
+	\end{tabular}	
+\caption{Some rtorrent commands}
+\end{table}
+
+\subsection{Add torrents automatically}
+% Add torrent auto
+
+\subsection{ruTorrent web interface}
+Despite a very good console interface you may prefer manage your torrents through 
+a web interface which is fully multiplatform by nature. There are two steps to 
+get a functionnal ruTorrent\footnote{The most known rtorrent web interface, some 
+screenshot are available on the project github at \href{https://github.com/Novik/
+ruTorrent}{github.com/Novik/ruTorrent}}: install it and then configure rtorrent 
+and nginx to connect them with ruTorrent.
+
+\begin{lstlisting}[language=bash,caption=ruTorrent installation and setup]
+# Download ruTorrent in usual directory
+$ cd /usr/share/webapps
+$ git clone https://github.com/Novik/ruTorrent.git
+
+# rtorrent configuration
+# Add: scgi_port = 127.0.0.1:5000 in configuration file
+$ nano ~/.rtorrent.rc
+
+# nginx configuration
+# Add this block in your domain for ruTorrent
+location /RPC2 {
+   scgi_port localhost:5000;
+   include scgi_params;
+}
+\end{lstlisting}
+
+At this point, you must be able to see the ruTorrent interface and visualize your 
+torrents. If you still have no connexion with rtorrent check if it is launched and 
+also the rutorrent configuration which must be good by default.
+
+\begin{lstlisting}[language=bash,caption=Check ruTorrent configuration]
+# ruTorrent configuration file
+$ nano /usr/share/webapps/ruTorrent/conf/config.php
+
+# Check that scgi setup is not set with sockets
+
+# Must be set
+$scgi_port = 5000;
+$scgi_host = "127.0.0.1";
+
+# Must be commented (socket)
+// $scgi_port = 0;
+// $scgi_host = "unix:///tmp/rpc.socket";
+\end{lstlisting}
+
+% Bind done, fix troubles
+
+%\end{document}

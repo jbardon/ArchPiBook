@@ -9,10 +9,6 @@ I am not an expert in linux system as ArchLinux and even less in electronic stuf
 
 Software installed
 ------------------
-
-Software to install
--------------------
-- Network time protocol -- [link](http://en.wikipedia.org/wiki/Network_Time_Protocol)
 - [nginx](http://wiki.nginx.org/Main) web server with [MariaDB](https://mariadb.org/en/about/) and [phpMyAdmin](http://www.phpmyadmin.net/home_page/index.php)
 - Music Player Daemon -- [link](http://en.wikipedia.org/wiki/Music_Player_Daemon) (and [ympd](http://www.ympd.org) web client)
 - [Ampache](http://ampache.org) to gather music and stream
@@ -20,3 +16,6 @@ Software to install
 - [aria2](http://aria2.sourceforge.net) downloader and [web client](https://github.com/ziahamza/webui-aria2)
 - [rTorrent](http://en.wikipedia.org/wiki/RTorrent) and [ruTorrent](https://github.com/Novik/ruTorrent)
 - Git server with [gitweb](https://git.wiki.kernel.org/index.php/Gitweb) and [gitlist](http://gitlist.org) web client
+
+Software to install
+-------------------

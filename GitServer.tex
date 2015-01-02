@@ -1,24 +1,24 @@
-\documentclass[12pt,a4paper]{book}\usepackage{array}\usepackage{tabu}\usepackage{multirow}\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}\usepackage{multirow}\usepackage[utf8]{inputenc}\usepackage[T1]{fontenc}\usepackage{lmodern}\usepackage{hyperref}\usepackage{graphicx}\usepackage[english, frenchb]{babel}\usepackage{listings}	\lstdefinestyle{customstyle}{basicstyle=\footnotesize,breakatwhitespace=false,breaklines=true,captionpos=b,keepspaces=true,tabsize=4,frame=single,moredelim=[is][\underbar]{_}{_}}\lstset{style=customstyle}\usepackage{menukeys}\usepackage{comment}\begin{document}
+%\documentclass[12pt,a4paper]{book}\usepackage{array}\usepackage{tabu}\usepackage{multirow}\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}\usepackage{multirow}\usepackage[utf8]{inputenc}\usepackage[T1]{fontenc}\usepackage{lmodern}\usepackage{hyperref}\usepackage{graphicx}\usepackage[english, frenchb]{babel}\usepackage{listings}	\lstdefinestyle{customstyle}{basicstyle=\footnotesize,breakatwhitespace=false,breaklines=true,captionpos=b,keepspaces=true,tabsize=4,frame=single,moredelim=[is][\underbar]{_}{_}}\lstset{style=customstyle}\usepackage{menukeys}\usepackage{comment}\begin{document}
 \chapter{Git server}
-\section{Why you would use Git}
-For some reasons, you need to keep several versions of document so you make 
+\section{Why would you use Git}
+For some reasons, you need to keep several versions of documents so you make 
 copies -- can be long and space consumer -- but it still difficult to get the 
-last version when more than one person works on one document.
+last version when more than one person works on the same document.
 \\\\
 Git is a versionning tool which can do this work for you and in addition keep 
-traces of who modified what on each document on a project. This tool will be not  
+traces of who modified what on each document in a project. This tool will be not  
 intrusive and can be used at every moments of a projet -- even if it is allready 
-started -- it ensure that you have a project which is \og{}good\fg{} and 
-up-to-date version.
+started -- it ensure that you have a project which is the \og{}good version\fg{} 
+everytime and it is up-to-date.
 \\\\
 Largely used in programming projects it can be usefull for any types of projects 
 which contains files readable by a simple text editor. You can get an idea of what 
 is git by browsing projects on \href{http://github.com}{github.com} which is the 
-most famous git projects host because it is free for public (open source) projets.
+most famous git projects host because it is free for public (open source) projects.
 
 \section{Install Git and add projects}
-To visualize git projects on web interface the first thing is need to have git 
-project. In order to create our own projet we will download an existing one 
+To visualize git projects on web interface the first thing you need to have is a 
+git project. In order to create our own projet we will download an existing one 
 to have a real history and some things to visualize. 
 \\\\
 I choose to use an open source project -- Firefox OS\footnote{Firefox OS is the 
@@ -44,7 +44,7 @@ $ git clone https://github.com/mozilla/firefox-ios.git
 There are a few directories that are most used for repositories but I retained two 
 of them: \texttt{/home/git/} and \texttt{/srv/git/}. 
 \\\\
-In ArchLinux, websites and ftp are by default in \emph{/srv} and \emph{/home/git} 
+In ArchLinux, websites and ftp are by default in \emph{/srv}, and \emph{/home/git} 
 is the home directory for \emph{git} user -- which is not a physic user -- so to 
 keep a kind of consistency -- in my opinion -- I prefer the second alternative. 
 
@@ -79,8 +79,8 @@ $ git push origin master # First time, after just "git push"
 \end{lstlisting}
 
 \subsection{Use an existing project}
-If you want to host a git project which allready it is possible to do. There two 
-possible situations:
+If you want to host a git project which allready exists it is possible to do. 
+There two possible situations:
 \begin{itemize}
 	\item The project is allready hosted by someone else or websites like GitHub 
 		  or BitBucket.
@@ -91,7 +91,7 @@ possible situations:
 As you can imagine, the first situation is the easier to solve, you just have to 
 clone the repository from the server with a specific option.
 
-\begin{lstlisting}[language=bash]
+\begin{lstlisting}[language=bash,caption=]
 $ git clone username@RPiIP:/srv/git/project.git --bare
 \end{lstlisting}
 
@@ -104,7 +104,7 @@ The first thing to do is retrieve the local project on the server. There are man
 ways to it, I advice to use FTP -- if you setup an FTP -- but for others here is 
 a simple way if you have a linux system.
 
-\begin{lstlisting}[language=bash]
+\begin{lstlisting}[language=bash,caption=]
 # Your project is named project
 $ scp username@RPiIP:/srv/git /local/path/to/project
 \end{lstlisting}
@@ -112,7 +112,7 @@ $ scp username@RPiIP:/srv/git /local/path/to/project
 With the working copy on your server, the last thing to do is clone the repository 
 as \emph{bare} locally and remove the working copy.
 
-\begin{lstlisting}[language=bash][Host repository from local copy]
+\begin{lstlisting}[language=bash,caption=Host repository from local copy]
 # Extract project informations
 $ git clone --bare /srv/git/projet /srv/git/project.git
 $ rm -r /srv/git/project
@@ -121,7 +121,7 @@ $ rm -r /srv/git/project
 	
 % Different from clone apparently
 \begin{comment}
-	\begin{lstlisting}[language=bash][Host repository from local copy]
+	\begin{lstlisting}[language=bash,caption=Host repository from local copy]
 # Extract project informations
 $ mv /srv/git/project/.git /srv/git/project.git
 $ rm -r /srv/git/project
@@ -138,7 +138,8 @@ technology, it is a bit slow but very refined so easy to use and understand.
 \\\\
 You can see a live usage of git web at \href{http://repo.or.cz/w?a=project\_list}
 {repo.or.cz/w?a=project\_list}, browse projets, commit and all things you want and 
-before abandoning GitWeb keep in mind that we will improve a little bit the visual.
+before abandoning GitWeb keep in mind that we will improve a little bit the visual 
+aspect.
 
 \subsubsection{Installation and configuration}
 \begin{lstlisting}[language=bash,caption=Gitweb setup]
@@ -254,4 +255,4 @@ $ nano /usr/share/webapps/gitlist/config.ini
 \section{Gitolite: manage projects}
 Soon in libraries
 
-\end{document}
+%\end{document}

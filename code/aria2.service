@@ -1,0 +1,14 @@
+# /usr/lib/systemd/system/aria2.service
+
+[Unit]
+Description=Aria2c download manager
+After=network.target
+
+[Service]
+Type=forking
+User=jeremy # Your user name
+RemainAfterExit=yes
+ExecStart=/usr/bin/aria2c --daemon=true --conf-path=/etc/aria2.conf --enable-rpc --rpc-listen-all
+
+[Install]
+WantedBy=multi-user.target
