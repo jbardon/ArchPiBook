@@ -1,4 +1,4 @@
-%\documentclass[12pt,a4paper]{book}\usepackage{array}\usepackage{tabu}\usepackage{multirow}\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}\usepackage{multirow}\usepackage[utf8]{inputenc}\usepackage[T1]{fontenc}\usepackage{lmodern}\usepackage{hyperref}\usepackage{graphicx}\usepackage[english, frenchb]{babel}\usepackage{listings}	\lstdefinestyle{customstyle}{basicstyle=\footnotesize,breakatwhitespace=false,breaklines=true,captionpos=b,keepspaces=true,tabsize=4,frame=single,moredelim=[is][\underbar]{_}{_}}\lstset{style=customstyle}\usepackage{menukeys}\usepackage{comment}\begin{document}
+\documentclass[12pt,a4paper]{book}\usepackage{array}\usepackage{tabu}\usepackage{multirow}\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}\usepackage{multirow}\usepackage[utf8]{inputenc}\usepackage[T1]{fontenc}\usepackage{lmodern}\usepackage{hyperref}\usepackage{graphicx}\usepackage[english, frenchb]{babel}\usepackage{listings}	\lstdefinestyle{customstyle}{basicstyle=\footnotesize,breakatwhitespace=false,breaklines=true,captionpos=b,keepspaces=true,tabsize=4,frame=single,moredelim=[is][\underbar]{_}{_}}\lstset{style=customstyle}\usepackage{menukeys}\usepackage{comment}\begin{document}
 \chapter{Download box}
 Many people uses their servers as seed boxes -- for torrent -- or an intermediate 
 to download their files faster because a server has an high speed connexion. 
@@ -120,6 +120,7 @@ will the main commands to use for your torrents management.
 % Add torrent auto
 
 \subsection{ruTorrent web interface}
+\subsubsection{Installation}
 Despite a very good console interface you may prefer manage your torrents through 
 a web interface which is fully multiplatform by nature. There are two steps to 
 get a functionnal ruTorrent\footnote{The most known rtorrent web interface, some 
@@ -163,6 +164,101 @@ $scgi_host = "127.0.0.1";
 // $scgi_host = "unix:///tmp/rpc.socket";
 \end{lstlisting}
 
-% Bind done, fix troubles
+\subsubsection{Fix troubles}
+When you access to ruTorrent web interface at the first you will see a lot of 
+messages log section which warn you about some troubles in your configuration.
 
-%\end{document}
+\begin{lstlisting}[language=bash,caption=Solve ruTorrent troubles]
+
+Problem: 
+Webserver user doesn't have read/write/execute access to the settings directory. ruTorrent settings cannot be saved. (/usr/share/webapps/ruTorrent/share/settings)
+
+Solution:
+$ chmod o+w  /usr/share/webapps/ruTorrent/share/torrents/
+
+------------
+Problems: 
+Webserver user doesn't have read/write/execute access to the settings directory. ruTorrent settings cannot be saved. (/usr/share/webapps/ruTorrent/share/settings)
+rTorrent user must have read/write/execute access to the settings directory. (/usr/share/webapps/ruTorrent/share/settings)
+rTorrent user can't access 'stat' program. Some functionality will be unavailable.
+scheduler: Plugin will not work. rTorrent user can't access external program (php).
+ratio: Some functionality will be unavailable. rTorrent user can't access external program (php).
+loginmgr: Some functionality will be unavailable. rTorrent user can't access external program (php).
+history: Plugin will not work. rTorrent user can't access external program (php).
+retrackers: Plugin will not work. rTorrent user can't access external program (php).
+autotools: Plugin will not work. rTorrent user can't access external program (php).
+datadir: Plugin will not work. rTorrent user can't access external program (php).
+trafic: Plugin will not work. rTorrent user can't access external program (php).
+unpack: Plugin will not work. rTorrent user can't access external program (php).
+create: Plugin will not work. rTorrent user can't access external program (php).
+rutracker_check: Plugin will not work. rTorrent user can't access external program (php).
+rss: Plugin will not work. rTorrent user can't access external program (php).
+screenshots: Plugin will not work. rTorrent user can't access external program (ffmpeg).
+_task: Some functionality will be unavailable. rTorrent user can't access external program (pgrep).
+rss: Some functionality will be unavailable. rTorrent user can't access external program (curl).
+
+Solution:
+$ chmod o+w  /usr/share/webapps/ruTorrent/share/settings/
+
+-----------
+Problem:
+Unpack plugin: rTorrent user can't access 'unrar' program.
+Cause of solved: unpack: Plugin will not work. rTorrent user can't access external program (php).
+
+Solution:
+$ pacman -S unrar
+
+-----------
+[06.01.2015 11:14:45] Webserver user can't access 'stat' program. Some functionality will be unavailable.
+[06.01.2015 11:14:45] rTorrent user must have read/execute access to the tmp directory. ruTorrent will not work. (/tmp/)
+[06.01.2015 11:14:45] rss: Some functionality will be unavailable. Webserver user can't access external program (curl).
+[06.01.2015 11:14:45] rutracker_check: Plugin will not work. Webserver user must have execute access to the rtorrent session directory (/tmp/rtorrent/).
+[06.01.2015 11:14:45] mediainfo: Plugin will not work. rTorrent user can't access external program (mediainfo).
+
+\end{lstlisting}
+
+\section{Owncloud}
+\begin{lstlisting}[language=bash,caption=Owncloud setup]
+$ cd /usr/share/webapps
+$ wget https://download.owncloud.org/community/owncloud-latest.tar.bz2
+$ tar -xvf owncloud-latest.tar.bz2  # long time
+$ rm owncloud-latest.tar.bz2 
+
+# http://doc.owncloud.org/server/6.0/admin_manual/installation/installation_source.html#set-the-directory-permissions
+$ chown root:root /usr/share/webapps/owncloud
+$ chown -R http:http /usr/share/webapps/owncloud/*
+
+$ nano /etc/nginx/site-available/owncloud
+$ ln -s /etc/nginx/site-available/owncloud /etc/nginx/site-enabled/
+
+--------
+Problem: 
+PHP module zip not installed.
+Please ask your server administrator to install the module.
+
+Solution:
+# Uncomment extension=zip.so
+$ nano /etc/php/php.ini 
+$ systemctl reload php-fpm
+
+-------
+Problem:
+PHP module GD not installed.
+Please ask your server administrator to install the module.
+
+Solution:
+$ pacman -S php-gd
+# Uncomment extension=gd.so
+$ nano /etc/php/php.ini 
+$ systemctl reload php-fpm
+
+------
+$ mkdir /srv/owncloud
+$ chmod o+w /srv/owncloud
+
+# db pass changed
+# add /srv/owncloud to open_basedir
+$ nano /etc/php/php.ini
+$ systemctl reload php-fpm
+\end{lstlisting}
+\end{document}
