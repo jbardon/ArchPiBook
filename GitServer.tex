@@ -1,4 +1,4 @@
-%\documentclass[12pt,a4paper]{book}\usepackage{array}\usepackage{tabu}\usepackage{multirow}\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}\usepackage{multirow}\usepackage[utf8]{inputenc}\usepackage[T1]{fontenc}\usepackage{lmodern}\usepackage{hyperref}\usepackage{graphicx}\usepackage[english, frenchb]{babel}\usepackage{listings}	\lstdefinestyle{customstyle}{basicstyle=\footnotesize,breakatwhitespace=false,breaklines=true,captionpos=b,keepspaces=true,tabsize=4,frame=single,moredelim=[is][\underbar]{_}{_}}\lstset{style=customstyle}\usepackage{menukeys}\usepackage{comment}\begin{document}
+\documentclass[12pt,a4paper]{book}\usepackage{array}\usepackage{tabu}\usepackage{multirow}\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}\usepackage{multirow}\usepackage[utf8]{inputenc}\usepackage[T1]{fontenc}\usepackage{lmodern}\usepackage{hyperref}\usepackage{graphicx}\usepackage[english, frenchb]{babel}\usepackage{listings}	\lstdefinestyle{customstyle}{basicstyle=\footnotesize,breakatwhitespace=false,breaklines=true,captionpos=b,keepspaces=true,tabsize=4,frame=single,moredelim=[is][\underbar]{_}{_}}\lstset{style=customstyle}\usepackage{menukeys}\usepackage{comment}\begin{document}
 \chapter{Git server}
 \section{Why would you use Git}
 For some reasons, you need to keep several versions of documents so you make 
@@ -253,6 +253,92 @@ $ nano /usr/share/webapps/gitlist/config.ini
 \end{lstlisting}
 
 \section{Gitolite: manage projects}
-Soon in libraries
 
-%\end{document}
+In the case wherein you have few repositories and you do not need to 
+setup access constraints the git common usage will be sufficient.
+\\\\
+However, if you are looking for a tool which enables you to restrict 
+access to repositories for specific persons -- or even groups --  
+gitolite is the answer to your problem.
+\\\\
+The documentation for gitolite is available at \href{http://gitolite.com}
+{gitolite.com} and it is well written and understandable. During 
+your research may be you found a similar tool called \emph{gitosis} 
+which is the ancestor of gitolite. It appears that gitosis is no longer 
+used and developped so that why I choose to install gitolite.
+
+\subsection{Installation}
+
+Gitolite will use \emph{git} user and functionalities so it is 
+to install git first. In this configuration I made the choice to 
+store git repositories -- and gitolite configuration -- in 
+\texttt{/srv/git} which will be the home directory of \emph{git} 
+user.
+
+\begin{lstlisting}[language=bash,caption=Gitolite installation]
+# Download and install gitolite
+$ cd /tmp
+$ git clone git://github.com/sitaramc/gitolite
+$ gitolite/install -to /bin
+$ rm -r gitolite
+
+# Create git user directory
+$ mkdir /srv/git
+$ chown git:git /srv/git
+
+# Set /srv/git as git use home
+# Add path, the line for git user should looks like :
+#     git:x:997:997:git daemon user:/srv/git:/bin/bash
+$ nano /etc/passwd
+\end{lstlisting}
+
+A this point, gitolite has been installed but it not yet usuable. 
+The last thing to do is defining the administrator which will be able 
+to manage repositories access through the \emph{gitolite-admin} 
+repository.
+\\\\
+Interactions with the git server will be made through ssh with the 
+git user. As a result, the only way to authenticate users is with 
+their ssh public key so we first need to get that key in order 
+to define the administator for gitolite.
+
+\begin{lstlisting}[language=bash,caption=Get ssh public key and define gitolite administrator]
+# On administrator machine
+
+# Generate key, press enter for each questions
+$ ssh-keygen -t rsa
+
+# Copy ssh public key to the server as admin.pub
+$ scp ~/.ssh/id_rsa.pub jeremy@local.pi:/srv/git/admin.pub
+
+# On the server as git user
+# Connect and configure administrator
+$ ssh git@RpiIP
+$ cd /srv/git
+$ gitolite setup -pk admin.pub
+\end{lstlisting}
+
+
+%https://github.com/sitaramc/gitolite
+\begin{lstlisting}[language=bash,caption=Get ssh]
+# Client admin
+$ git clone ssh://git@local.pi/gitolite-admin
+$ nano gitolite-admin/conf/gitolite.conf
+
+repo gitolite-admin
+    RW+     =   admin
+
+repo testing
+    R       =   admin # try remove W
+
+\end{lstlisting}
+
+% # Uninstall
+% http://gitolite.googlecode.com/git-history/f023591183365980d11c1ba352461bea9863746f/doc/uninstall.html
+% http://gitolite.com/gitolite/emergencies.html
+
+\subsection{Setup repositories}
+\subsection{Adapt GitWeb and GitList}
+
+
+\end{document}
