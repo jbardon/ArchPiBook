@@ -261,4 +261,20 @@ $ chmod o+w /srv/owncloud
 $ nano /etc/php/php.ini
 $ systemctl reload php-fpm
 \end{lstlisting}
+
+\section{Samba}
+\begin{lstlisting}[language=bash,caption=Samba setup]
+$ pacman -S samba
+$ cp /etc/samba/smb.conf.default /etc/samba/smb.conf
+
+# sudo obligatoire
+$ sudo smbpasswd -a jeremy  # ajouter
+$ sudo smbpasswd -x jeremy  # enlever
+
+$ pdbedit -w -L # list users
+$ testparm /etc/samba/smb.conf # test config file
+$ systemctl enable smbd nmbd
+$ systemctl start smbd nmbd
+\end{lstlisting}
+
 \end{document}

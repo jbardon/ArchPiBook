@@ -299,7 +299,7 @@ repository.
 \\\\
 Interactions with the git server will be made through ssh with the 
 git user. As a result, the only way to authenticate users is with 
-their ssh public key so we first need to get that key in order 
+their ssh public key, so we first need to get that key in order 
 to define the administator for gitolite.
 
 \begin{lstlisting}[language=bash,caption=Get ssh public key and define gitolite administrator]
@@ -318,25 +318,46 @@ $ cd /srv/git
 $ gitolite setup -pk admin.pub
 \end{lstlisting}
 
+Once the administrator set in gitolite configuration, you will be able to access 
+to the configuration repository from the administrator machine. 
+\\\\
+By default two repositories are created -- gitolite-admin and testing -- the 
+first contains the configuration for gitolite and the second is empty because it 
+will allows you to test your access for different users.
+ 
+\begin{lstlisting}[language=bash,caption=Gitolite administration]
+# On administrator machine
+$ git clone ssh://git@RPiIP/gitolite-admin
 
-%https://github.com/sitaramc/gitolite
-\begin{lstlisting}[language=bash,caption=Get ssh]
-# Client admin
-$ git clone ssh://git@local.pi/gitolite-admin
+# Contains repositories names and rights for users
 $ nano gitolite-admin/conf/gitolite.conf
 
+# admin user have all access on gitolite-admin
 repo gitolite-admin
     RW+     =   admin
 
+# admin user will be able to pull but not to push
 repo testing
-    R       =   admin # try remove W
-
+    R       =   admin # here remove W
+    
+# Commit and push changes to update gitolite configuration
+$ git commit -am"Restrict testing access for admin user"
+$ git push
 \end{lstlisting}
 
-% # Uninstall
-% http://gitolite.googlecode.com/git-history/f023591183365980d11c1ba352461bea9863746f/doc/uninstall.html
-% http://gitolite.com/gitolite/emergencies.html
+Now the administrator user have all rights on \emph{gitolite-admin} repository, he
+can pull \emph{testing} project but gitolite will denied push operations. Gitolite 
+allows you to define groups of users as described in the GitHub repository
+\footnote{Gitolite repository at \href{https://github.com/sitaramc/gitolite}
+{github.com/sitaramc/gitolite}} so here these features will be not explained.
+\\\\
+As mentioned before, the documentation is well written and I want you to pay 
+attention at this particular page\footnote{Article of the gitolite documentation 
+about settings troubles available at \href{http://gitolite.com/gitolite/emergencies.html}
+{gitolite.com/gitolite/emergencies.html}} which describes some process to follow 
+in case of emergencies, for example if you lost administrator public key.
 
+% Uninstall > http://gitolite.googlecode.com/git-history/f023591183365980d11c1ba352461bea9863746f/doc/uninstall.html
 \subsection{Setup repositories}
 \subsection{Adapt GitWeb and GitList}
 
