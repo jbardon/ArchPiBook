@@ -1,6 +1,8 @@
 ArchPi book
 ===========
 
+> Read ArchPi book [on GitHub](https://github.com/jbardon/ArchPiBook/blob/master/ArchPiBook.pdf) or get your [offline copy](https://github.com/jbardon/ArchPiBook/raw/master/ArchPiBook.pdf)
+
 How to book to learn a few things you need to know about [ArchLinux ARM](http://archlinuxarm.org/platforms/armv6/raspberry-pi) on [RPi](http://www.raspberrypi.org/help/what-is-a-raspberry-pi/). From basic installation and setup to side packages for music sharing or versioning system.
 
 About author
